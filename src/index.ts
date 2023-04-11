@@ -3,6 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 import cors from "cors";
+import { sayHello } from "@superlore/helpers";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
@@ -37,5 +38,6 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
+  sayHello();
   console.log(`listening on *:${PORT}`);
 });
