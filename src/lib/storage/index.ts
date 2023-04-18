@@ -17,7 +17,7 @@ async function main() {
   const bucketName = "your-bucket-name";
   const remoteFilePath = "path/in/bucket/file.ext";
 
-  await uploadToGCS(storage, localFilePath, bucketName, remoteFilePath);
+  const url = await uploadToGCS(storage, localFilePath, bucketName, remoteFilePath);
 }
 
 main();
@@ -50,5 +50,8 @@ export async function uploadToGCS(
   await bucket.upload(localFilePath, {
     destination: file,
   });
+  await file.makePublic();
   console.log(`${localFilePath} uploaded to ${bucketName}/${remoteFilePath}`);
+  const publicUrl = `https://storage.googleapis.com/${bucketName}/${remoteFilePath}`;
+  return publicUrl;
 }

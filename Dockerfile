@@ -22,6 +22,10 @@ COPY . ./
 # Run custom commands
 RUN npm run build
 
+# Install ffmpeg
+RUN sudo apt-get update
+RUN sudo apt-get install ffmpeg
+
 # Expose the application port
 EXPOSE 7777
 
