@@ -9,3 +9,19 @@ It is a seperate server because NextJS does not natively support websocket conne
 $ npm install
 $ npm run dev
 ```
+
+## Deployment
+
+```bash
+$ npm run deploy
+```
+
+## Routes
+
+- `/api/sockets`
+- `/api/sockets/health`
+- `/extractor/tiktok/video`
+- `/extractor/youtube/video`
+- `/extractor/youtube/audio`
+- `/clipper/video`
+- `/clipper/audio`

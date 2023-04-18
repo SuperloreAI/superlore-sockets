@@ -37,6 +37,11 @@ io.on("connection", (socket) => {
   });
 });
 
+app.post("/extractor/tiktok/video", (req, res) => {});
+app.post("/extractor/youtube/video", (req, res) => {});
+app.post("/clipper/youtube", (req, res) => {});
+app.post("/clipper/tiktok", (req, res) => {});
+
 server.listen(PORT, () => {
   sayHello();
   console.log(`listening on *:${PORT}`);

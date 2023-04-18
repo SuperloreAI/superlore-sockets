@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx nodemon"
+    "dev": "npx nodemon",
+    "build": "tsc --build",
+    "start": "node build/index.js",
+    "deploy": "npm install && npm run build && gcloud run deploy superlore-sockets --memory 1024Mi --project=superlore-demo --update-env-vars NODE_ENV=staging"
   },
   "keywords": [],
   "author": "",
@@ -28,10 +31,14 @@
     "typescript": "^5.0.4"
   },
   "dependencies": {
-    "@superlore/helpers": "^1.0.1",
+    "@google-cloud/secret-manager": "^4.2.2",
+    "@google-cloud/storage": "^6.9.5",
+    "@superlore/helpers": "^1.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "socket.io": "^4.6.1"
+    "google-auth-library": "^8.7.0",
+    "socket.io": "^4.6.1",
+    "youtube-mp3-downloader": "^0.7.11"
   }
 }
