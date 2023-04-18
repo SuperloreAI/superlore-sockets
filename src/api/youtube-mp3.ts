@@ -3,6 +3,7 @@ import { initStorage, uploadToGCS } from "@/lib/storage";
 import { extractYouTubeVideoId } from "@/lib/helpers/url";
 import { v4 as uuid } from "uuid";
 import path from "path";
+import fs from "fs";
 
 interface ExtractYouTubeAudioOptions {
   url: string;
@@ -54,6 +55,14 @@ export const extractYouTubeAudio = async ({
       remoteFilePath
     );
     console.log(`File has been uploaded to ${url}`);
+    // Delete the local file after upload
+    fs.unlink(localFilePath, (err) => {
+      if (err) {
+        console.error(`Error deleting local file: ${err.message}`);
+      } else {
+        console.log(`Local file '${localFilePath}' has been deleted.`);
+      }
+    });
     return url;
   });
 
