@@ -1,5 +1,7 @@
 import { Storage } from "@google-cloud/storage";
 import { getGcpBackendCredentials } from "@/lib/secrets/secrets";
+import axios from "axios";
+import fs from "fs";
 
 /**
  * 
@@ -9,6 +11,7 @@ Here's an example of how you can use the `initStorage()` and `uploadToGCS()` fun
 // main.ts
 
 import { initStorage, uploadToGCS } from "./storage";
+import fs from 'fs';
 
 async function main() {
   const storage = await initStorage();
@@ -39,6 +42,34 @@ export async function initStorage() {
   return storage;
 }
 
+export async function downloadFile(
+  url: string,
+  destination: string
+): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const response = await axios.get(url, {
+        responseType: "stream",
+      });
+
+      const file = fs.createWriteStream(destination);
+      response.data.pipe(file);
+
+      file.on("finish", () => {
+        file.close();
+        resolve(destination);
+      });
+
+      file.on("error", (err: Error) => {
+        fs.unlinkSync(destination);
+        reject(err);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 export async function uploadToGCS(
   storage: Storage,
   localFilePath: string,
@@ -55,3 +86,47 @@ export async function uploadToGCS(
   const publicUrl = `https://storage.googleapis.com/${bucketName}/${remoteFilePath}`;
   return publicUrl;
 }
+
+export const downloadAndUpload = async (
+  url: string,
+  assetID: string,
+  outputFilePath: string,
+  fileType: "mp4" | "mp3"
+) => {
+  const response = await axios({
+    method: "get",
+    url: url,
+    responseType: "stream",
+  });
+
+  const writer = fs.createWriteStream(outputFilePath);
+  response.data.pipe(writer);
+
+  await new Promise((resolve, reject) => {
+    writer.on("finish", resolve);
+    writer.on("error", reject);
+  });
+
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+  const storage = await initStorage();
+
+  const remoteFilePath = `${assetID}.${fileType}`;
+  const publicUrl = await uploadToGCS(
+    storage,
+    outputFilePath,
+    bucketName,
+    remoteFilePath
+  );
+
+  console.log(`File has been uploaded as ${remoteFilePath}`);
+
+  fs.unlink(outputFilePath, (err) => {
+    if (err) {
+      console.error(`Error deleting local file: ${err.message}`);
+    } else {
+      console.log(`Local file '${outputFilePath}' has been deleted.`);
+    }
+  });
+
+  return publicUrl;
+};

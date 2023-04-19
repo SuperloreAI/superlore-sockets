@@ -23,12 +23,13 @@ COPY . ./
 RUN npm run build
 
 # Install ffmpeg
-RUN sudo apt-get update
-RUN sudo apt-get install ffmpeg
+RUN apt-get update
+RUN apt-get install -y ffmpeg
 
 # Expose the application port
 EXPOSE 7777
 
 # Start the application
-CMD ["node", "build/index.js"]
+CMD ["npm", "run", "dev"]
+# CMD ["node", "build/index.js"]
 # [END dockerfile_npm_node]
