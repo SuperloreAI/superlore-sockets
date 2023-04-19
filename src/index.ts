@@ -6,6 +6,9 @@ import cors from "cors";
 import { sayHello } from "@superlore/helpers";
 import { extractYouTubeVideo } from "@/api/youtube-mp4";
 import { extractYouTubeAudio } from "@/api/youtube-mp3";
+import { extractTikTokVideo } from "@/api/tiktok-mp4";
+import { clipAndUploadVideo } from "@/api/video-clipper";
+import { clipAndUploadAudio } from "@/api/audio-clipper";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
@@ -40,7 +43,23 @@ io.on("connection", (socket) => {
   });
 });
 
-app.post("/extractor/tiktok/video", (req, res) => {});
+app.post("/extractor/tiktok/video", async (req, res) => {
+  console.log(req.body.url);
+  try {
+    const { video, music } = await extractTikTokVideo(req.body.url);
+    console.log(video);
+    console.log(music);
+    res.status(200).json({
+      video,
+      audio: music,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      error: e,
+    });
+  }
+});
 
 app.post("/extractor/youtube/video", async (req, res) => {
   try {
@@ -76,8 +95,47 @@ app.post("/extractor/youtube/audio", async (req, res) => {
   }
 });
 
-app.post("/clipper/youtube", (req, res) => {});
-app.post("/clipper/tiktok", (req, res) => {});
+app.post("/clipper/video", async (req, res) => {
+  const { url, startTime, endTime, outputFileName } = req.body;
+  try {
+    const publicPath = await clipAndUploadVideo(
+      url,
+      startTime,
+      endTime,
+      outputFileName
+    );
+    console.log("Video successfully clipped and uploaded:", publicPath);
+    res.status(200).json({
+      url: publicPath,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      error: e,
+    });
+  }
+});
+
+app.post("/clipper/audio", async (req, res) => {
+  const { url, startTime, endTime, outputFileName } = req.body;
+  try {
+    const publicPath = await clipAndUploadAudio(
+      url,
+      startTime,
+      endTime,
+      outputFileName
+    );
+    console.log("Audio successfully clipped and uploaded:", publicPath);
+    res.status(200).json({
+      url: publicPath,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({
+      error: e,
+    });
+  }
+});
 
 server.listen(PORT, () => {
   sayHello();

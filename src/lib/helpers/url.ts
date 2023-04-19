@@ -4,3 +4,11 @@ export function extractYouTubeVideoId(url: string) {
   const match = url.match(regex);
   return match ? match[1] : null;
 }
+
+export const extractTikTokVideoId = (url: string): string | null => {
+  console.log(url);
+  const tiktokVideoIdRegex = /(?:video\/)(\d+)/;
+  const match = url.match(tiktokVideoIdRegex);
+
+  return match ? match[1] : null;
+};

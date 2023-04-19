@@ -25,3 +25,11 @@ $ npm run deploy
 - `/extractor/youtube/audio`
 - `/clipper/video`
 - `/clipper/audio`
+
+
+## TODO
+
+☑️ Use websockets to notify when an asset has finished processing
+☑️ Extract user ID from the auth headers of the request
+☑️ Use the user ID to create a folder for the user on cloud storage
+☑️ Save the assets into the database
