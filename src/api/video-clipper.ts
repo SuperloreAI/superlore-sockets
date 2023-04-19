@@ -36,26 +36,31 @@ import { v4 as uuid } from "uuid";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 
+interface ClipAndUploadVideoProps {
+  url: string;
+  startTime: string;
+  endTime: string;
+  assetIDVideo: string;
+  assetVideoName: string;
+}
+
 export async function clipAndUploadVideo(
-  videoUrl: string,
-  startTime: string,
-  endTime: string,
-  outputFileName: string
+  args: ClipAndUploadVideoProps
 ): Promise<string> {
-  const assetID = uuid();
+  const { url, startTime, endTime, assetIDVideo, assetVideoName } = args;
   const inputFilePathOriginal = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
-    `${assetID}-original.mp4`
+    `${assetIDVideo}-original.mp4`
   );
   const inputFilePathClipped = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
-    `${assetID}-clipped.mp4`
+    `${assetIDVideo}-clipped.mp4`
   );
 
   // Download the video file
-  await downloadFile(videoUrl, inputFilePathOriginal);
+  await downloadFile(url, inputFilePathOriginal);
 
   // Clip the video using ffmpeg
   const outputFilePathClipped = await clipVideo(
@@ -67,14 +72,12 @@ export async function clipAndUploadVideo(
   const storage = await initStorage();
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
 
-  const outputFileNameDir = `clipped-video/${outputFileName}-${assetID}.mp4`;
-
   // Upload the clipped video to Google Cloud Storage
   const publicPath = await uploadToGCS(
     storage,
     outputFilePathClipped,
     bucketName,
-    outputFileNameDir
+    assetVideoName
   );
 
   // Clean up local files

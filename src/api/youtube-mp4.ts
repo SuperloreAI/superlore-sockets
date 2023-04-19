@@ -1,16 +1,16 @@
 import youtubeDl from "youtube-dl-exec";
 import { initStorage, uploadToGCS } from "@/lib/storage";
-import { v4 as uuid } from "uuid";
 import path from "path";
 import { extractYouTubeVideoId } from "@/lib/helpers/url";
 import fs from "fs";
 
 interface ExtractYouTubeVideoOptions {
   url: string;
+  assetIDVideo: string;
+  assetVideoName: string;
 }
-export const extractYouTubeVideo = async ({
-  url,
-}: ExtractYouTubeVideoOptions) => {
+export const extractYouTubeVideo = async (args: ExtractYouTubeVideoOptions) => {
+  const { assetIDVideo, url, assetVideoName } = args;
   const youtubeId = extractYouTubeVideoId(url);
   if (!youtubeId) {
     throw Error("Invalid YouTube URL");
@@ -18,36 +18,27 @@ export const extractYouTubeVideo = async ({
 
   const storage = await initStorage();
 
-  const id = uuid();
-
-  console.log(`id = ${id}`);
-
   const outputFilePath = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
-    `${youtubeId}-${id}.mp4`
+    `${youtubeId}-${assetIDVideo}.mp4`
   );
 
-  console.log(`outputFilePath = ${outputFilePath}`);
-
   try {
-    const output = await youtubeDl(youtubeId, {
+    await youtubeDl(youtubeId, {
       format: "mp4",
       output: outputFilePath,
       noCheckCertificates: true,
     });
 
-    console.log(output);
-
     const localFilePath = outputFilePath;
     const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
-    const remoteFilePath = `${youtubeId}-${id}.mp4`;
 
     const url = await uploadToGCS(
       storage,
       localFilePath,
       bucketName,
-      remoteFilePath
+      assetVideoName
     );
     console.log(`File has been uploaded to ${url}`);
 

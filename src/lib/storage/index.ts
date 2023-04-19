@@ -47,11 +47,15 @@ export async function downloadFile(
   destination: string
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
+    console.log(`Downloaoding file...`);
+    console.log(url);
+    console.log(destination);
     try {
+      console.log(`Axios file...`);
       const response = await axios.get(url, {
         responseType: "stream",
       });
-
+      console.log(`Got axios file...`);
       const file = fs.createWriteStream(destination);
       response.data.pipe(file);
 
@@ -91,7 +95,8 @@ export const downloadAndUpload = async (
   url: string,
   assetID: string,
   outputFilePath: string,
-  fileType: "mp4" | "mp3"
+  fileType: "mp4" | "mp3",
+  fileName: string
 ) => {
   const response = await axios({
     method: "get",
@@ -110,15 +115,14 @@ export const downloadAndUpload = async (
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
   const storage = await initStorage();
 
-  const remoteFilePath = `${assetID}.${fileType}`;
   const publicUrl = await uploadToGCS(
     storage,
     outputFilePath,
     bucketName,
-    remoteFilePath
+    fileName
   );
 
-  console.log(`File has been uploaded as ${remoteFilePath}`);
+  console.log(`File has been uploaded as ${fileName}`);
 
   fs.unlink(outputFilePath, (err) => {
     if (err) {

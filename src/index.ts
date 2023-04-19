@@ -3,7 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import dotenv from "dotenv";
 import cors from "cors";
-import { sayHello } from "@superlore/helpers";
+import { v4 as uuid } from "uuid";
 import { extractYouTubeVideo } from "@/api/youtube-mp4";
 import { extractYouTubeAudio } from "@/api/youtube-mp3";
 import { extractTikTokVideo } from "@/api/tiktok-mp4";
@@ -12,8 +12,6 @@ import { clipAndUploadAudio } from "@/api/audio-clipper";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
-
-console.log(`Frontend domain = ${FRONTEND_DOMAIN}`);
 
 const corsOptions = {
   origin: FRONTEND_DOMAIN,
@@ -44,14 +42,32 @@ io.on("connection", (socket) => {
 });
 
 app.post("/extractor/tiktok/video", async (req, res) => {
-  console.log(req.body.url);
+  const { url } = req.body;
+  const assetIDVideo = uuid();
+  const assetIDAudio = uuid();
+  const assetVideoName = `video-${assetIDVideo}.mp4`;
+  const assetAudioName = `audio-${assetIDAudio}.mp3`;
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+
+  const expectedFinalVideoPath = `https://storage.googleapis.com/${bucketName}/${assetVideoName}`;
+  const expectedFinalAudioPath = `https://storage.googleapis.com/${bucketName}/${assetAudioName}`;
   try {
-    const { video, music } = await extractTikTokVideo(req.body.url);
-    console.log(video);
-    console.log(music);
+    extractTikTokVideo({
+      url,
+      assetIDVideo,
+      assetIDAudio,
+      assetVideoName,
+      assetAudioName,
+    });
     res.status(200).json({
-      video,
-      audio: music,
+      video: {
+        url: expectedFinalVideoPath,
+        id: assetIDVideo,
+      },
+      audio: {
+        url: expectedFinalAudioPath,
+        id: assetIDAudio,
+      },
     });
   } catch (e) {
     console.error(e);
@@ -62,13 +78,20 @@ app.post("/extractor/tiktok/video", async (req, res) => {
 });
 
 app.post("/extractor/youtube/video", async (req, res) => {
+  const { url } = req.body;
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+  const assetIDVideo = uuid();
+  const assetVideoName = `video-${assetIDVideo}.mp4`;
+  const expectedFinalVideoPath = `https://storage.googleapis.com/${bucketName}/${assetVideoName}`;
   try {
-    const uploadedUrl = await extractYouTubeVideo({
-      url: req.body.url,
+    extractYouTubeVideo({
+      url,
+      assetIDVideo,
+      assetVideoName,
     });
-    console.log(uploadedUrl);
     res.status(200).json({
-      url: uploadedUrl,
+      url: expectedFinalVideoPath,
+      id: assetIDVideo,
     });
   } catch (e) {
     console.error(e);
@@ -79,13 +102,20 @@ app.post("/extractor/youtube/video", async (req, res) => {
 });
 
 app.post("/extractor/youtube/audio", async (req, res) => {
+  const { url } = req.body;
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+  const assetIDAudio = uuid();
+  const assetAudioName = `audio-${assetIDAudio}.mp3`;
+  const expectedFinalAudioPath = `https://storage.googleapis.com/${bucketName}/${assetAudioName}`;
   try {
-    const uploadedUrl = await extractYouTubeAudio({
-      url: req.body.url,
+    extractYouTubeAudio({
+      url,
+      assetIDAudio,
+      assetAudioName,
     });
-    console.log(uploadedUrl);
     res.status(200).json({
-      url: uploadedUrl,
+      url: expectedFinalAudioPath,
+      id: assetIDAudio,
     });
   } catch (e) {
     console.error(e);
@@ -96,17 +126,22 @@ app.post("/extractor/youtube/audio", async (req, res) => {
 });
 
 app.post("/clipper/video", async (req, res) => {
-  const { url, startTime, endTime, outputFileName } = req.body;
+  const { url, startTime, endTime } = req.body;
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+  const assetIDVideo = uuid();
+  const assetVideoName = `video-${assetIDVideo}.mp4`;
+  const expectedFinalVideoPath = `https://storage.googleapis.com/${bucketName}/${assetVideoName}`;
   try {
-    const publicPath = await clipAndUploadVideo(
+    clipAndUploadVideo({
       url,
       startTime,
       endTime,
-      outputFileName
-    );
-    console.log("Video successfully clipped and uploaded:", publicPath);
+      assetVideoName,
+      assetIDVideo,
+    });
     res.status(200).json({
-      url: publicPath,
+      url: expectedFinalVideoPath,
+      id: assetIDVideo,
     });
   } catch (e) {
     console.error(e);
@@ -118,16 +153,21 @@ app.post("/clipper/video", async (req, res) => {
 
 app.post("/clipper/audio", async (req, res) => {
   const { url, startTime, endTime, outputFileName } = req.body;
+  const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
+  const assetIDAudio = uuid();
+  const assetAudioName = `audio-${assetIDAudio}.mp3`;
+  const expectedFinalAudioPath = `https://storage.googleapis.com/${bucketName}/${assetAudioName}`;
   try {
-    const publicPath = await clipAndUploadAudio(
+    clipAndUploadAudio({
       url,
       startTime,
       endTime,
-      outputFileName
-    );
-    console.log("Audio successfully clipped and uploaded:", publicPath);
+      assetAudioName,
+      assetIDAudio,
+    });
     res.status(200).json({
-      url: publicPath,
+      url: expectedFinalAudioPath,
+      id: assetIDAudio,
     });
   } catch (e) {
     console.error(e);
@@ -138,6 +178,5 @@ app.post("/clipper/audio", async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  sayHello();
   console.log(`listening on *:${PORT}`);
 });
