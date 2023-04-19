@@ -1,6 +1,5 @@
 import { downloadAndUpload, initStorage } from "@/lib/storage";
 import axios from "axios";
-import { v4 as uuid } from "uuid";
 import path from "path";
 import { extractTikTokVideoId } from "@/lib/helpers/url";
 
@@ -36,7 +35,16 @@ const tiktokDL = async (url: string) => {
   };
 };
 
-export const extractTikTokVideo = async (url: string) => {
+interface ExtractTikTokVideoProps {
+  url: string;
+  assetIDVideo: string;
+  assetIDAudio: string;
+  assetVideoName: string;
+  assetAudioName: string;
+}
+export const extractTikTokVideo = async (args: ExtractTikTokVideoProps) => {
+  const { assetIDVideo, assetIDAudio, url, assetVideoName, assetAudioName } =
+    args;
   const tikTokVideoId = extractTikTokVideoId(url);
   if (!tikTokVideoId) {
     throw new Error("No TikTok Video URL Found");
@@ -44,26 +52,36 @@ export const extractTikTokVideo = async (url: string) => {
   if (url.indexOf("tiktok.com") === -1) {
     throw new Error("Invalid TikTok URL");
   }
+
   const { nowm, wm, music } = await tiktokDL(url);
 
-  const assetIDVideo = uuid();
   const outputFilePathVideo = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
     `${tikTokVideoId}-${assetIDVideo}.mp4`
   );
 
-  const assetIDAudio = uuid();
   const outputFilePathAudio = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
-    `${tikTokVideoId}-${assetIDAudio}.mp4`
+    `${tikTokVideoId}-${assetIDAudio}.mp3`
   );
-
   try {
     const [uploadedVideoPath, uploadedMusicPath] = await Promise.all([
-      downloadAndUpload(nowm, assetIDVideo, outputFilePathVideo, "mp4"),
-      downloadAndUpload(music, assetIDAudio, outputFilePathAudio, "mp3"),
+      downloadAndUpload(
+        nowm,
+        assetIDVideo,
+        outputFilePathVideo,
+        "mp4",
+        assetVideoName
+      ),
+      downloadAndUpload(
+        music,
+        assetIDAudio,
+        outputFilePathAudio,
+        "mp3",
+        assetAudioName
+      ),
     ]);
 
     console.log(`Video and music have been uploaded.`);

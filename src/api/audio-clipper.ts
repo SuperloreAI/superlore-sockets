@@ -4,27 +4,32 @@ import { v4 as uuid } from "uuid";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 
+interface ClipAndUploadAudioProps {
+  url: string;
+  startTime: string;
+  endTime: string;
+  assetIDAudio: string;
+  assetAudioName: string;
+}
+
 export async function clipAndUploadAudio(
-  audioUrl: string,
-  startTime: string,
-  endTime: string,
-  outputFileName: string
+  args: ClipAndUploadAudioProps
 ): Promise<string> {
-  const assetID = uuid();
+  const { url, startTime, endTime, assetIDAudio, assetAudioName } = args;
   const inputFilePathOriginal = path.join(
     __dirname,
     "../../assets",
-    `${assetID}-original.mp3`
+    `${assetIDAudio}-original.mp3`
   );
   const outputFilePathTrimmed = path.join(
     __dirname,
     "../../assets",
-    `${assetID}-trimmed.mp3`
+    `${assetIDAudio}-trimmed.mp3`
   );
-
+  console.log(`Before attempting audio download`);
   // Download the audio file
-  await downloadFile(audioUrl, inputFilePathOriginal);
-
+  await downloadFile(url, inputFilePathOriginal);
+  console.log(`Downloaded ${url} to ${inputFilePathOriginal}`);
   // Trim the audio using ffmpeg
   const outputFilePathMp3 = await trimAudio(
     inputFilePathOriginal,
@@ -35,14 +40,12 @@ export async function clipAndUploadAudio(
   const storage = await initStorage();
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
 
-  const outputFileNameDir = `clipped-audio/${outputFileName}-${assetID}.mp3`;
-
   // Upload the trimmed audio to Google Cloud Storage
   const publicPath = await uploadToGCS(
     storage,
     outputFilePathMp3,
     bucketName,
-    outputFileNameDir
+    assetAudioName
   );
 
   // Clean up local files
