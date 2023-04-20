@@ -48,8 +48,8 @@ export async function downloadFile(
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     console.log(`Downloaoding file...`);
-    console.log(url);
-    console.log(destination);
+    console.log(`url=${url}`);
+    console.log(`destination=${destination}`);
     try {
       console.log(`Axios file...`);
       const response = await axios.get(url, {
