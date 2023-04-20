@@ -48,6 +48,7 @@ export async function clipAndUploadVideo(
   args: ClipAndUploadVideoProps
 ): Promise<string> {
   const { url, startTime, endTime, assetIDVideo, assetVideoName } = args;
+  console.log(`url=${url}`);
   const inputFilePathOriginal = path.join(
     __dirname, // Add this line to make the path relative to the current directory
     "../../assets",
@@ -58,7 +59,8 @@ export async function clipAndUploadVideo(
     "../../assets",
     `${assetIDVideo}-clipped.mp4`
   );
-
+  console.log(`inputFilePathOriginal=${inputFilePathOriginal}`);
+  console.log(`inputFilePathClipped=${inputFilePathClipped}`);
   // Download the video file
   await downloadFile(url, inputFilePathOriginal);
 
