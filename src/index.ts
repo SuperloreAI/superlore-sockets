@@ -9,6 +9,7 @@ import { extractYouTubeAudio } from "@/api/youtube-mp3";
 import { extractTikTokVideo } from "@/api/tiktok-mp4";
 import { clipAndUploadVideo } from "@/api/video-clipper";
 import { clipAndUploadAudio } from "@/api/audio-clipper";
+import { updateVideoStatus } from "@/api/update-database";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
@@ -138,7 +139,9 @@ app.post("/clipper/video", async (req, res) => {
       endTime,
       assetVideoName,
       assetIDVideo,
-    });
+    })
+      .then(updateVideoStatus)
+      .catch((err) => console.log(err));
     res.status(200).json({
       url: expectedFinalVideoPath,
       id: assetIDVideo,

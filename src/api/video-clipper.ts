@@ -35,6 +35,9 @@ import path from "path";
 import { v4 as uuid } from "uuid";
 import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
+import { extractRandomScreenshot } from "@/lib/helpers/thumbnail";
+import { getVideoMetadata } from "@/lib/helpers/metadata-video";
+import { MediaUpdateInterchangeVideoClip } from "@superlore/helpers/dist/types/asset-interchange";
 
 interface ClipAndUploadVideoProps {
   url: string;
@@ -46,7 +49,7 @@ interface ClipAndUploadVideoProps {
 
 export async function clipAndUploadVideo(
   args: ClipAndUploadVideoProps
-): Promise<string> {
+): Promise<MediaUpdateInterchangeVideoClip> {
   const { url, startTime, endTime, assetIDVideo, assetVideoName } = args;
   console.log(`url=${url}`);
   const inputFilePathOriginal = path.join(
@@ -63,6 +66,14 @@ export async function clipAndUploadVideo(
   console.log(`inputFilePathClipped=${inputFilePathClipped}`);
   // Download the video file
   await downloadFile(url, inputFilePathOriginal);
+  console.log(`downloaded file`);
+
+  // Create a thumbnail
+  const thumbnailPath = await extractRandomScreenshot(
+    inputFilePathOriginal,
+    assetIDVideo
+  );
+  console.log(`finished getting thumbnail`);
 
   // Clip the video using ffmpeg
   const outputFilePathClipped = await clipVideo(
@@ -71,22 +82,37 @@ export async function clipAndUploadVideo(
     startTime,
     endTime
   );
+  console.log(`clipped video`);
+
+  // Get the metadata
+  const metadata = await getVideoMetadata(outputFilePathClipped);
+  console.log(`got metadata`);
+
   const storage = await initStorage();
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
 
+  console.log(`uploading to google cloud storage`);
   // Upload the clipped video to Google Cloud Storage
-  const publicPath = await uploadToGCS(
-    storage,
-    outputFilePathClipped,
-    bucketName,
-    assetVideoName
-  );
+  const [publicPathGCP, thumbnailPathGCP] = await Promise.all([
+    uploadToGCS(storage, outputFilePathClipped, bucketName, assetVideoName),
+    uploadToGCS(
+      storage,
+      thumbnailPath.localPath,
+      bucketName,
+      thumbnailPath.fileName
+    ),
+  ]);
 
   // Clean up local files
   fs.unlinkSync(inputFilePathOriginal);
   fs.unlinkSync(outputFilePathClipped);
+  fs.unlinkSync(thumbnailPath.localPath);
 
-  return publicPath;
+  return {
+    id: assetIDVideo,
+    thumbnail: thumbnailPathGCP,
+    metadata,
+  };
 }
 
 async function clipVideo(
