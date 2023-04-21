@@ -4,3 +4,8 @@ export const appBackendSecret = {
   secretId: "App-Backend-Credentials",
   versionId: "latest",
 };
+
+export const openAIKeySecret = {
+  secretId: "openai",
+  versionId: "latest",
+};
