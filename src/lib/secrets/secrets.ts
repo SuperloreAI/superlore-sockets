@@ -1,6 +1,6 @@
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 import { GoogleAuth } from "google-auth-library";
-import { appBackendSecret, projectId } from "@/lib/constants";
+import { appBackendSecret, openAIKeySecret, projectId } from "@/lib/constants";
 
 async function accessSecretVersion(
   projectId: string,
@@ -46,4 +46,13 @@ export const getGcpBackendCredentials = (): Promise<SecretKey> => {
   // .catch((error) => {
   //   console.error(`Error accessing secret: ${error}`);
   // });
+};
+
+export const getOpenAIKey = (): Promise<SecretKey> => {
+  // Get the secret value
+  return accessSecretVersion(
+    projectId,
+    openAIKeySecret.secretId,
+    openAIKeySecret.versionId
+  ) as Promise<SecretKey>;
 };
