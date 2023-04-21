@@ -2,6 +2,15 @@ import { Storage } from "@google-cloud/storage";
 import { getGcpBackendCredentials } from "@/lib/secrets/secrets";
 import axios from "axios";
 import fs from "fs";
+import { extractRandomScreenshot } from "@/lib/helpers/thumbnail";
+import {
+  getAudioMetadata,
+  getVideoMetadata,
+} from "@/lib/helpers/metadata-video";
+import {
+  placeholderAudioThumbnail,
+  placeholderVideoThumbnail,
+} from "@superlore/helpers";
 
 /**
  * 
@@ -12,6 +21,8 @@ Here's an example of how you can use the `initStorage()` and `uploadToGCS()` fun
 
 import { initStorage, uploadToGCS } from "./storage";
 import fs from 'fs';
+import { extractRandomScreenshot } from '@/lib/helpers/thumbnail';
+import { getVideoMetadata } from '@/lib/helpers/metadata-video';
 
 async function main() {
   const storage = await initStorage();
@@ -115,12 +126,44 @@ export const downloadAndUpload = async (
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
   const storage = await initStorage();
 
+  // Get the metadata
+  const metadata =
+    fileType === "mp4"
+      ? await getVideoMetadata(outputFilePath)
+      : await getAudioMetadata(outputFilePath);
+  console.log(`got metadata`);
+
   const publicUrl = await uploadToGCS(
     storage,
     outputFilePath,
     bucketName,
     fileName
   );
+  let thumbnailUrl =
+    fileType === "mp4" ? placeholderVideoThumbnail : placeholderAudioThumbnail;
+  if (fileType === "mp4") {
+    // Create a thumbnail
+    const thumbnailPath = await extractRandomScreenshot(
+      outputFilePath,
+      assetID
+    );
+    console.log(`finished getting thumbnail`);
+    thumbnailUrl = await uploadToGCS(
+      storage,
+      thumbnailPath.localPath,
+      bucketName,
+      thumbnailPath.fileName
+    );
+    fs.unlink(thumbnailPath.localPath, (err) => {
+      if (err) {
+        console.error(`Error deleting local file: ${err.message}`);
+      } else {
+        console.log(
+          `Local file '${thumbnailPath.localPath}' has been deleted.`
+        );
+      }
+    });
+  }
 
   console.log(`File has been uploaded as ${fileName}`);
 
@@ -132,5 +175,9 @@ export const downloadAndUpload = async (
     }
   });
 
-  return publicUrl;
+  return {
+    url: publicUrl,
+    metadata,
+    thumbnailUrl,
+  };
 };

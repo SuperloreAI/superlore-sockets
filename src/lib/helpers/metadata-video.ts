@@ -1,6 +1,9 @@
 import ffmpeg from "fluent-ffmpeg";
 import fs from "fs";
-import type { VideoMetadata } from "@superlore/helpers/dist/types/asset-interchange.d.ts";
+import type {
+  AudioMetadata,
+  VideoMetadata,
+} from "@superlore/helpers/dist/types/asset-interchange.d.ts";
 
 export const getVideoMetadata = async (
   filePath: string
@@ -39,6 +42,37 @@ export const getVideoMetadata = async (
         }
 
         if (audioStream) {
+          metadata.audioCodec = audioStream.codec_name;
+        }
+
+        metadata.originalSource = filePath;
+
+        resolve(metadata);
+      }
+    });
+  });
+};
+
+export const getAudioMetadata = async (
+  filePath: string
+): Promise<AudioMetadata> => {
+  if (!fs.existsSync(filePath)) {
+    throw new Error("File does not exist");
+  }
+
+  return new Promise((resolve, reject) => {
+    let metadata: AudioMetadata = {};
+
+    ffmpeg.ffprobe(filePath, (error, data) => {
+      if (error) {
+        reject(error);
+      } else {
+        const audioStream = data.streams.find(
+          (stream) => stream.codec_type === "audio"
+        );
+
+        if (audioStream) {
+          metadata.duration = parseFloat(audioStream.duration || "0");
           metadata.audioCodec = audioStream.codec_name;
         }
 

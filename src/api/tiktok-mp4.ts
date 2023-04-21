@@ -32,6 +32,7 @@ const tiktokDL = async (url: string) => {
     nowm: domain + res.data.data.play,
     wm: domain + res.data.data.wmplay,
     music: domain + res.data.data.music,
+    title: res.data.data.title,
   };
 };
 
@@ -53,7 +54,7 @@ export const extractTikTokVideo = async (args: ExtractTikTokVideoProps) => {
     throw new Error("Invalid TikTok URL");
   }
 
-  const { nowm, wm, music } = await tiktokDL(url);
+  const { nowm, wm, music, title } = await tiktokDL(url);
 
   const outputFilePathVideo = path.join(
     __dirname, // Add this line to make the path relative to the current directory
@@ -66,6 +67,7 @@ export const extractTikTokVideo = async (args: ExtractTikTokVideoProps) => {
     "../../assets",
     `${tikTokVideoId}-${assetIDAudio}.mp3`
   );
+
   try {
     const [uploadedVideoPath, uploadedMusicPath] = await Promise.all([
       downloadAndUpload(
@@ -88,8 +90,8 @@ export const extractTikTokVideo = async (args: ExtractTikTokVideoProps) => {
 
     // Return the uploaded file paths
     return {
-      video: uploadedVideoPath,
-      music: uploadedMusicPath,
+      video: { ...uploadedVideoPath, title },
+      music: { ...uploadedMusicPath, title },
     };
   } catch (error) {
     console.error(error);

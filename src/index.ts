@@ -9,7 +9,7 @@ import { extractYouTubeAudio } from "@/api/youtube-mp3";
 import { extractTikTokVideo } from "@/api/tiktok-mp4";
 import { clipAndUploadVideo } from "@/api/video-clipper";
 import { clipAndUploadAudio } from "@/api/audio-clipper";
-import { updateVideoStatus } from "@/api/update-database";
+import { updateAudioStatus, updateVideoStatus } from "@/api/update-database";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
@@ -59,7 +59,28 @@ app.post("/extractor/tiktok/video", async (req, res) => {
       assetIDAudio,
       assetVideoName,
       assetAudioName,
-    });
+    })
+      .then(({ video, music }) => {
+        Promise.all([
+          updateVideoStatus({
+            id: assetIDVideo,
+            title: video.title,
+            notes: "",
+            url: video.url,
+            thumbnail: video.thumbnailUrl,
+            metadata: video.metadata,
+          }),
+          updateAudioStatus({
+            id: assetIDAudio,
+            title: music.title,
+            notes: "",
+            url: music.url,
+            thumbnail: music.thumbnailUrl,
+            metadata: music.metadata,
+          }),
+        ]);
+      })
+      .catch((err) => console.log(err));
     res.status(200).json({
       video: {
         url: expectedFinalVideoPath,
@@ -89,7 +110,9 @@ app.post("/extractor/youtube/video", async (req, res) => {
       url,
       assetIDVideo,
       assetVideoName,
-    });
+    })
+      .then(updateVideoStatus)
+      .catch((err) => console.log(err));
     res.status(200).json({
       url: expectedFinalVideoPath,
       id: assetIDVideo,
@@ -113,7 +136,9 @@ app.post("/extractor/youtube/audio", async (req, res) => {
       url,
       assetIDAudio,
       assetAudioName,
-    });
+    })
+      .then(updateAudioStatus)
+      .catch((err) => console.log(err));
     res.status(200).json({
       url: expectedFinalAudioPath,
       id: assetIDAudio,
