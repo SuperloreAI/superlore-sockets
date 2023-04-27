@@ -10,6 +10,8 @@ import { extractTikTokVideo } from "@/api/tiktok-mp4";
 import { clipAndUploadVideo } from "@/api/video-clipper";
 import { clipAndUploadAudio } from "@/api/audio-clipper";
 import { updateAudioStatus, updateVideoStatus } from "@/api/update-database";
+import { generateCuratedVideo } from "@/api/curate-video";
+import { downloadAndZipVideos } from "@/api/export-zip-raws";
 dotenv.config();
 
 const FRONTEND_DOMAIN = process.env.FRONTEND_DOMAIN;
@@ -124,7 +126,6 @@ app.post("/extractor/youtube/video", async (req, res) => {
     });
   }
 });
-
 app.post("/extractor/youtube/audio", async (req, res) => {
   const { url } = req.body;
   const bucketName = process.env.APP_BUCKET_ASSET_LIBRARY_BUCKET || "";
@@ -203,6 +204,20 @@ app.post("/clipper/audio", async (req, res) => {
       error: e,
     });
   }
+});
+
+app.post("/generate-screenplay", async (req, res) => {
+  const { synopsis } = req.body;
+  const scenes = await generateCuratedVideo(synopsis);
+  console.log("Returning scenes...");
+  res.status(200).send(scenes);
+});
+
+app.post("/compile-video-from-raws", async (req, res) => {
+  const { title, urlOfRaws } = req.body;
+  console.log(`/compile-video-from-raws`);
+  const uploadedZip = await downloadAndZipVideos(title, urlOfRaws);
+  res.status(200).send({ uploadedZip });
 });
 
 server.listen(PORT, () => {

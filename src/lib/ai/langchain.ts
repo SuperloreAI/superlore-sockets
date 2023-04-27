@@ -1,6 +1,7 @@
 import OpenAISingleton from "@/lib/ai/initOpenAI";
 import { PromptTemplate } from "langchain/prompts";
 import { LLMChain } from "langchain/chains";
+import axios from "axios";
 
 const tikTokTemplate = `
 Write a scene by scene video script for a TikTok video based on the below request.
@@ -22,9 +23,17 @@ const baseTikTokPrompt = new PromptTemplate({
 });
 
 export const generateVideoScript = async (userPrompt: string) => {
+  console.log(`Retreiving the LLM model...`);
   const model = await OpenAISingleton.getOpenAIModel();
   const chain = new LLMChain({ llm: model, prompt: baseTikTokPrompt });
-  const res = await chain.call({ userPrompt });
-  console.log(res.text);
-  return res.text;
+  console.log(`About to call it...`);
+  try {
+    console.log(userPrompt);
+    const res = await chain.call({ userPrompt });
+    console.log(res.text);
+    return res.text;
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
 };
